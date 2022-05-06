@@ -31,6 +31,7 @@ Material:
     - _FacingFront: 1
     - _Freq: 18.95
     - _PivotLen: 0.93
+    - _PivotOffset: 0
     - _Speed: 0.1
     - _UVOffset: 0
     - _WindStrengh: 0.1

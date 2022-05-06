@@ -7,6 +7,7 @@ Shader "Unlit/Flag"
         _Freq ("Frequency", Float) = 5
         _DistortionFreq ("Distortion Frequency", Float) = 1
         _DistortionAmp ("Distortion Amplitude", Float) = 0.5
+        _PivotOffset("Pivot Offset", Float) = 0
         _UVOffset("UV Offset", Float) = 0
     }
 
@@ -21,6 +22,7 @@ Shader "Unlit/Flag"
         float _Amp;
         float _Freq;
         float _UVOffset;
+        float _PivotOffset;
         float _DistortionFreq;
         float _DistortionAmp;
         float _Speed;
@@ -40,7 +42,7 @@ Shader "Unlit/Flag"
         float flag(float x, float y, float _offset){
             float distortion_offset = sin(y * _DistortionFreq) * _DistortionAmp;
             float flg = sin_wave(x, _offset - distortion_offset, _Freq, _Amp) ;
-            float smooth_flg = flg  * x;
+            float smooth_flg = flg * x;
             return smooth_flg;
         }
 
@@ -60,10 +62,15 @@ Shader "Unlit/Flag"
 
         vertex_output vert_shared(mesh_data v){
             vertex_output o;
-            v.uv.x += _UVOffset;
+            if(v.uv.x > _PivotOffset){
+                v.uv.x += remap(v.uv.x, _PivotOffset, 1, 0, _UVOffset) - _PivotOffset;
+            }else{
+                v.uv.x = 0;
+            }
             float time_offset = _Time.y * _Speed;
             //time_offset = 0;
             v.vertex.y = flag(v.uv.x, v.uv.y, time_offset);
+            //v.vertex.z += v.uv.x * v.uv.x * 0.3;
             //v.vertex.y = 0; 
             o.vertex = UnityObjectToClipPos(v.vertex);
             o.uv = v.uv + _UVOffset;
