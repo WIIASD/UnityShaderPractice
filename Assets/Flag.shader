@@ -2,6 +2,7 @@ Shader "Unlit/Flag"
 {
     Properties
     {
+        _MainTex ("Texture", 2D) = "white" {}
         _Speed ("Speed", Range(0,1)) = 0.1
         _Amp ("Amplitude", Float) = 0.5
         _Freq ("Frequency", Float) = 5
@@ -9,6 +10,7 @@ Shader "Unlit/Flag"
         _DistortionAmp ("Distortion Amplitude", Float) = 0.5
         _PivotOffset("Pivot Offset", Float) = 0
         _UVOffset("UV Offset", Float) = 0
+        _Tint("Color Tint", Color) = (1,1,1,1)
     }
 
     CGINCLUDE
@@ -19,6 +21,8 @@ Shader "Unlit/Flag"
 
         #include "UnityCG.cginc"
 
+        sampler2D _MainTex;
+        float4 _MainTex_ST;
         float _Amp;
         float _Freq;
         float _UVOffset;
@@ -26,6 +30,7 @@ Shader "Unlit/Flag"
         float _DistortionFreq;
         float _DistortionAmp;
         float _Speed;
+        float4 _Tint;
 
         float remap(float v, float min_v, float max_v, float target_min, float target_max){
             return target_min + (v - min_v) * (target_max - target_min)/(max_v - min_v);
@@ -57,6 +62,7 @@ Shader "Unlit/Flag"
         {
             float4 vertex : SV_POSITION;
             float2 uv : TEXCOORD0;
+            float2 uv_flag_tex : TEXCOORD3;
             float3 normal : TEXCOORD1;
         };
 
@@ -74,16 +80,18 @@ Shader "Unlit/Flag"
             //v.vertex.y = 0; 
             o.vertex = UnityObjectToClipPos(v.vertex);
             o.uv = v.uv + _UVOffset;
+            o.uv_flag_tex = TRANSFORM_TEX(v.uv, _MainTex);
             o.normal = v.normal;
             return o;
         }
 
         float4 frag_shared (vertex_output i) : SV_Target
         {
+            float4 texColor = tex2D(_MainTex, i.uv_flag_tex);
             float time_offset = _Time.y * _Speed;
             //time_offset = 0;
             float flg = flag(i.uv.x, i.uv.y, time_offset) * sign(i.normal.y);
-            return remap(flg, -_Amp, _Amp, 0, 1);
+            return remap(flg, -_Amp, _Amp, 0, 1) * texColor * _Tint;
         }
     ENDCG
 
