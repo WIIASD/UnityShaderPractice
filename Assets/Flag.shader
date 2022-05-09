@@ -66,8 +66,10 @@ Shader "Unlit/Flag"
             float3 normal : TEXCOORD1;
         };
 
+        //TODO: add noise support
         vertex_output vert_shared(mesh_data v){
             vertex_output o;
+            o.uv_flag_tex = TRANSFORM_TEX(v.uv, _MainTex);//output uv transforming for texture before changing uv
             if(v.uv.x > _PivotOffset){
                 v.uv.x += remap(v.uv.x, _PivotOffset, 1, 0, _UVOffset) - _PivotOffset;
             }else{
@@ -76,11 +78,9 @@ Shader "Unlit/Flag"
             float time_offset = _Time.y * _Speed;
             //time_offset = 0;
             v.vertex.y = flag(v.uv.x, v.uv.y, time_offset);
-            //v.vertex.z += v.uv.x * v.uv.x * 0.3;
             //v.vertex.y = 0; 
             o.vertex = UnityObjectToClipPos(v.vertex);
             o.uv = v.uv + _UVOffset;
-            o.uv_flag_tex = TRANSFORM_TEX(v.uv, _MainTex);
             o.normal = v.normal;
             return o;
         }
