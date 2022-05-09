@@ -2,8 +2,10 @@ Shader "Unlit/Flag"
 {
     Properties
     {
+        [Header(Textures)]
         _MainTex ("Texture", 2D) = "white" {}
         _NoiseTex ("Texture", 2D) = "white" {}
+        [Header(Wave Options)]
         _NoiseLevel ("Noise Level", Range(0,0.2)) = 0
         _Speed ("Speed", Range(0,1)) = 0.1
         _Amp ("Amplitude", Float) = 0.5
@@ -13,6 +15,8 @@ Shader "Unlit/Flag"
         _PivotOffset("Pivot Offset", Float) = 0
         _UVOffset("UV Offset", Float) = 0
         _Tint("Color Tint", Color) = (1,1,1,1)
+        [Header(Lighting Options)]
+        _LightingProp("Lighting Properties", vector) = (0,0,0,1)
     }
 
     CGINCLUDE
@@ -36,6 +40,7 @@ Shader "Unlit/Flag"
         float _DistortionAmp;
         float _Speed;
         float4 _Tint;
+        float4 _LightingProp;
 
         float remap(float v, float min_v, float max_v, float target_min, float target_max){
             return target_min + (v - min_v) * (target_max - target_min)/(max_v - min_v);
@@ -66,6 +71,7 @@ Shader "Unlit/Flag"
         struct vertex_output
         {
             float4 vertex : SV_POSITION;
+            float4 vertexWorldPos : TEXCOORD2;
             float2 uv : TEXCOORD0;
             float2 uv_flag_tex : TEXCOORD3;
             float3 normal : TEXCOORD1;
@@ -86,8 +92,9 @@ Shader "Unlit/Flag"
             v.vertex.y = flag(v.uv.x, v.uv.y, time_offset + noise_offset.x * _NoiseLevel);
             //v.vertex.y = 0; 
             o.vertex = UnityObjectToClipPos(v.vertex);
+            o.vertexWorldPos = mul(unity_ObjectToWorld, v.vertex);
             o.uv = v.uv + _UVOffset;
-            o.normal = v.normal;
+            o.normal = UnityObjectToWorldNormal(v.normal);
             return o;
         }
 
@@ -96,8 +103,11 @@ Shader "Unlit/Flag"
             float4 texColor = tex2D(_MainTex, i.uv_flag_tex);
             float time_offset = _Time.y * _Speed;
             //time_offset = 0;
-            float flg = flag(i.uv.x, i.uv.y, time_offset) * sign(i.normal.y);
-            return remap(flg, -_Amp, _Amp, 0, 1) * texColor * _Tint;
+            float3 lightDir = normalize(_LightingProp.xyz - i.vertexWorldPos);
+            float lightStren = dot(lightDir, i.normal) * _LightingProp.w;
+            return lightStren * texColor * _Tint;
+            //float flg = flag(i.uv.x, i.uv.y, time_offset) * sign(i.normal.z);
+            //return remap(flg, -_Amp, _Amp, 0, 1) * texColor * _Tint;
         }
     ENDCG
 
