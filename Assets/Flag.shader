@@ -3,6 +3,8 @@ Shader "Unlit/Flag"
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
+        _NoiseTex ("Texture", 2D) = "white" {}
+        _NoiseLevel ("Noise Level", Range(0,0.2)) = 0
         _Speed ("Speed", Range(0,1)) = 0.1
         _Amp ("Amplitude", Float) = 0.5
         _Freq ("Frequency", Float) = 5
@@ -23,6 +25,9 @@ Shader "Unlit/Flag"
 
         sampler2D _MainTex;
         float4 _MainTex_ST;
+        sampler2D _NoiseTex;
+        float4 _NoiseTex_ST;
+        float _NoiseLevel;
         float _Amp;
         float _Freq;
         float _UVOffset;
@@ -77,7 +82,8 @@ Shader "Unlit/Flag"
             }
             float time_offset = _Time.y * _Speed;
             //time_offset = 0;
-            v.vertex.y = flag(v.uv.x, v.uv.y, time_offset);
+            float4 noise_offset = tex2Dlod(_NoiseTex, float4(v.uv,0,0)) * 2 - 1;
+            v.vertex.y = flag(v.uv.x, v.uv.y, time_offset + noise_offset.x * _NoiseLevel);
             //v.vertex.y = 0; 
             o.vertex = UnityObjectToClipPos(v.vertex);
             o.uv = v.uv + _UVOffset;
